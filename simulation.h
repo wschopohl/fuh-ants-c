@@ -15,3 +15,5 @@ typedef struct SimulationPool {
 void SimulationSetWorld(World *w);
 void SimulationStart(); // Starts the simulation thread
 void SimulationStop();
+float GetSimulationSpeed();
+void SetSimulationSpeed(float s);

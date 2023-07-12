@@ -13,11 +13,6 @@ void WorldInit(int width, int height, const char* map_file, Vector2 nest_positio
     }
 }
 
-void WorldAddFood(FoodCluster food_cluster) {
-    if(world.food_cluster_count >= MAX_FOOD_CLUSTERS) return;
-    world.food_clusters[world.food_cluster_count++] = food_cluster;
-}
-
 void WorldAddAnt(Ant ant) {
     if(world.ant_count >= MAX_ANTS) return;
     for(int i=0;i<MAX_ANTS;i++) {

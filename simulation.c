@@ -4,11 +4,24 @@
 #include "world.h"
 #include "simulation.h"
 #include "ant.h"
+#include "map.h"
 #include "timer.h"
 
 static pthread_t simulation_thread;
 static bool simulation_running = true;
 static SimulationPool simulation_pools[THREADS];
+
+static float speed = 1.0;
+
+static void inline sleep_or_pause() {
+    if(speed > 0.0) {
+        usleep(1000000 / (FPS * speed));
+        return;
+    }
+    while(speed <= 0.0) {
+        usleep(50000);
+    }
+}
 
 static void* simulation_loop(void* args) {
     Timer spawn_timer = get_timer();
@@ -18,7 +31,7 @@ static void* simulation_loop(void* args) {
             WorldAddAnt(GetNewAnt(WorldRef()->nest_position));
             reset_timer(&spawn_timer);
         }
-        usleep(1000000 / FPS);
+        sleep_or_pause();
     }
     stop_timer(&spawn_timer);
     return NULL;
@@ -30,12 +43,14 @@ static void* ant_pool_loop(void* pool_args) {
         for(int i=0;i<pool->count;i++) {
             AntMove(&pool->ants[i]);
         }
-        usleep(1000000 / FPS);
+        sleep_or_pause();
     }
     return NULL;
 }
 
 void SimulationStart() {
+    LoadWallBitMap(WorldRef()->map_filename);
+
     pthread_create(&simulation_thread, NULL, simulation_loop, NULL);
     for(int i=0;i<THREADS;i++) {
         simulation_pools[i].running = true;
@@ -56,4 +71,13 @@ void SimulationStop() {
     }
     simulation_running = false;
     pthread_join(simulation_thread, NULL);
+    UnloadWallBitMap();
+}
+
+float GetSimulationSpeed() {
+    return speed;
+}
+
+void SetSimulationSpeed(float s) {
+    speed = s;
 }
