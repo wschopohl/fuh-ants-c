@@ -27,7 +27,7 @@ static void* simulation_loop(void* args) {
     Timer spawn_timer = get_timer();
 
     while(simulation_running) {
-        if(get_lap_time_us(&spawn_timer) > 1000000 / SPAWN_RATE) {
+        if(get_lap_time_us(&spawn_timer) > 1000000 / Config.spawn_rate) {
             WorldAddAnt(GetNewAnt(WorldRef()->nest_position));
             reset_timer(&spawn_timer);
         }
@@ -41,7 +41,7 @@ static void* ant_pool_loop(void* pool_args) {
     SimulationPool *pool = (SimulationPool*)pool_args;
     while(pool->running) {
         for(int i=0;i<pool->count;i++) {
-            AntMove(&pool->ants[i]);
+            AntUpdate(&pool->ants[i]);
         }
         sleep_or_pause();
     }
@@ -50,6 +50,8 @@ static void* ant_pool_loop(void* pool_args) {
 
 void SimulationStart() {
     LoadWallBitMap(WorldRef()->map_filename);
+    LoadFoodBitMap(WorldRef()->food_filename);
+    GeneratePheromoneMaps();
 
     pthread_create(&simulation_thread, NULL, simulation_loop, NULL);
     for(int i=0;i<THREADS;i++) {
@@ -72,6 +74,7 @@ void SimulationStop() {
     simulation_running = false;
     pthread_join(simulation_thread, NULL);
     UnloadWallBitMap();
+    UnloadPheromoneMaps();
 }
 
 float GetSimulationSpeed() {

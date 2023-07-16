@@ -11,7 +11,7 @@ ifeq ($(BUILD_MODE),DEBUG)
     CFLAGS += -g -D_DEBUG
 endif
 
-SOURCES=main.c render_engine.c simulation.c map.c world.c ant.c
+SOURCES=main.c config.c render_engine.c simulation.c map.c world.c ant.c
 
 OBJECTS = $(addprefix $(BUILD_DIR)/, $(SOURCES:.c=.o))
 DEPS = $(addprefix $(BUILD_DIR)/,$(SOURCES:.c=.d))

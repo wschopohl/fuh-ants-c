@@ -3,11 +3,21 @@
 
 typedef struct Bitmap {
     int *data;
-    int width;
+    int int_width;
+    int pixel_width;
+    int pixel_height;
 } Bitmap;
 
 
+void LoadFoodBitMap(const char* filename);
 void LoadWallBitMap(const char* filename);
 void UnloadWallBitMap();
-Image GetRenderBitMap();
+Image GetWallImage();
+Image GetFoodImage();
+Image GetPheromoneImage();
 bool WallAt(int x, int y);
+bool FoodAt(int x, int y);
+void RemoveFood(int x, int y);
+void GeneratePheromoneMaps();
+void UnloadPheromoneMaps();
+void DropPheromone(Vector2 position, int type, float strength);

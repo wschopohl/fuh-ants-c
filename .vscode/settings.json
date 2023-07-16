@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "render_engine.h": "c",
-        "stdlib.h": "c"
+        "stdlib.h": "c",
+        "config.h": "c"
     }
 }

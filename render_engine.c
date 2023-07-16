@@ -11,6 +11,8 @@ static Texture2D map_texture;
 static Texture2D walls_texture;
 static Texture2D nest_texture;
 static Texture2D ant_texture;
+static Texture2D food_texture;
+static Texture2D pheromone_texture;
 Vector2 ant_center;
 
 static void init() {
@@ -19,7 +21,9 @@ static void init() {
     map_texture = LoadTexture(WorldRef()->map_filename);
     ant_texture = LoadTexture(ANT_SPRITE_FILE);
     nest_texture = LoadTexture(NEST_SPRITE_FILE);
-    walls_texture = LoadTextureFromImage(GetRenderBitMap());  
+    walls_texture = LoadTextureFromImage(GetWallImage());  
+    food_texture = LoadTextureFromImage(GetFoodImage());
+    pheromone_texture = LoadTextureFromImage(GetPheromoneImage());
     ant_center.x = ant_texture.width / 2;
     ant_center.y = ant_texture.height / 2;
 }
@@ -48,7 +52,9 @@ static void render_loop() {
 
     while (!WindowShouldClose())
     {
-        // UpdateTexture(walls_texture, GetRenderBitMap().data);
+        // UpdateTexture(walls_texture, GetWallBitMap().data);
+        UpdateTexture(food_texture, GetFoodImage().data);
+        UpdateTexture(pheromone_texture, GetPheromoneImage().data);
         // if (IsKeyDown(KEY_RIGHT)) ref.x += 1;
         // if (IsKeyDown(KEY_LEFT)) ref.x -= 1;
         if (IsKeyDown(KEY_UP)) simulation_speed += 0.1;
@@ -61,7 +67,9 @@ static void render_loop() {
         {
             ClearBackground(LIGHTGRAY);
             // DrawTexture(map_texture, 0, 0, WHITE);
+            DrawTexture(pheromone_texture, 0, 0, WHITE);
             DrawTexture(walls_texture, 0, 0, WHITE);
+            DrawTexture(food_texture, 0, 0, WHITE);
             DrawTexture(nest_texture, WorldRef()->nest_position.x - nest_texture.width/2, WorldRef()->nest_position.y - nest_texture.height/2, WHITE);
             draw_ants();
             print_stats();

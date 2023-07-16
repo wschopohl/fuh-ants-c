@@ -14,9 +14,10 @@ typedef struct Ant {
     int step;
     int angle_step;
     int wall_search_start;
+    Vector2 nest_position;
 } Ant;
 
 Ant GetNewAnt(Vector2 position);
-void AntMove(Ant *ant);
+void AntUpdate(Ant *ant);
 
 #endif
