@@ -9,5 +9,5 @@ Configuration Config = {
     .ant_angle_variation = 30.0,
     .ant_max_speed = 1.0,
     .ant_wall_seach_angle = 15.0,
-    .ant_nest_sense_radius = 120
+    .ant_nest_sense_radius = 20
 };

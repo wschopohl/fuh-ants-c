@@ -21,8 +21,8 @@ typedef struct Configuration {
 #define P_FOOD 0
 #define P_NEST 1
 
-#define P_FOOD_COLOR (Color){0,255,0,255}
-#define P_NEST_COLOR (Color){255,0,0,255}
+#define P_FOOD_COLOR (Color){0,0,255}
+#define P_NEST_COLOR (Color){255,0,0}
 
 
 extern Configuration Config;

@@ -107,8 +107,7 @@ void AntUpdate(Ant *ant) {
     if(ant->food == 0) { 
         check_for_food(ant);
         DropPheromone(ant->position, P_NEST, 1.0);
-    }
-    else if(ant->food > 0) {
+    } else {
         check_for_nest(ant);
         DropPheromone(ant->position, P_FOOD, 1.0);
     }

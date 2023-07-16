@@ -31,6 +31,7 @@ static void* simulation_loop(void* args) {
             WorldAddAnt(GetNewAnt(WorldRef()->nest_position));
             reset_timer(&spawn_timer);
         }
+        PheromoneDecay();
         sleep_or_pause();
     }
     stop_timer(&spawn_timer);

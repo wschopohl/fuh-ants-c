@@ -6,7 +6,7 @@
 
 int main(void)
 {
-    WorldInit(1150, 680, "assets/maps/map_maze.png", "assets/maps/map_maze_food.png", (Vector2){.x=430,.y=390});
+    WorldInit(1150, 680, "assets/maps/map_maze_2.png", "assets/maps/map_maze_food.png", (Vector2){.x=430,.y=390});
 
     SimulationStart();
 

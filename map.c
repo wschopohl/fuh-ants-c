@@ -2,6 +2,7 @@
 #include <math.h>
 #include <inttypes.h>
 #include <stdio.h>
+#include <pthread.h>
 #include "map.h"
 #include "config.h"
 
@@ -12,9 +13,11 @@ static Image walls_render;
 static Bitmap food;
 static Image food_render;
 static float* pheromone_map[PHEROMONE_TYPES];
-static Image pheromone_map_render;
+static Image pheromone_map_render[PHEROMONE_TYPES];
 static float pheromone_max_strength[PHEROMONE_TYPES] = {1.0};
 static const Color pheromone_color[PHEROMONE_TYPES] = {P_FOOD_COLOR, P_NEST_COLOR};
+
+// pthread_mutex_t pheromone_map_lock[PHEROMONE_TYPES];
 
 static inline int byte_index(int x) {
     return x / BITS_PER_INT;
@@ -94,29 +97,66 @@ void LoadFoodBitMap(const char* filename) {
     food_render = from_bitmap(food, GREEN);
 }
 
-void GeneratePheromoneMaps() {
-    for(int i=0; i<PHEROMONE_TYPES; i++) {
-        pheromone_map[i] = MemAlloc(sizeof(float) * walls.pixel_width * walls.pixel_height);
-    }
-    pheromone_map_render = GenImageColor(walls.pixel_width, walls.pixel_height, (Color){0,0,0,0});
+static inline int position_to_index(Vector2 position) {
+    return (int)((int)position.y * walls.pixel_width + (int)position.x);
 }
 
-static inline int position_to_index(Vector2 position) {
-    return (int)(position.y * walls.pixel_height + position.x);
+void GeneratePheromoneMaps() {
+    for(int type=0; type<PHEROMONE_TYPES; type++) {
+        pheromone_map[type] = (float*)MemAlloc(sizeof(float) * walls.pixel_width * walls.pixel_height);
+        pheromone_map_render[type] = GenImageColor(walls.pixel_width, walls.pixel_height, (Color){0});
+        // pthread_mutex_init(&pheromone_map_lock[type], NULL);
+    }
+
+    // const int type = 1;
+    // for(float y = 0; y < walls.pixel_height; y++) {
+    //     for(float x = 0; x < walls.pixel_width; x++) {
+    //         Vector2 pos = (Vector2){x,y};
+    //         int idx = position_to_index(pos);
+    //         pheromone_map[type][idx] += 1.0;
+    //         float factor = pheromone_map[type][idx] / 2.0;
+    //         Color pixel_color = Fade(BLACK, factor);
+    //         ImageDrawPixelV(&pheromone_map_render[type], pos, pixel_color);
+    //     }
+    // }
 }
+
+
 
 void DropPheromone(Vector2 position, int type, float strength) {
+    // pthread_mutex_lock(&pheromone_map_lock[type]);
+
     int idx = position_to_index(position);
     pheromone_map[type][idx] += strength;
-    Color pixel_color = {0,0,0,255};
-    for(int i=0;i<PHEROMONE_TYPES;i++) {
-        if(pheromone_map[i][idx] > pheromone_max_strength[i]) pheromone_max_strength[i] = pheromone_map[i][idx];
-        float factor = pheromone_map[i][idx] / pheromone_max_strength[i];
-        pixel_color.r += pheromone_color[i].r * factor;
-        pixel_color.g += pheromone_color[i].g * factor;
-        pixel_color.b += pheromone_color[i].b * factor;
+    if(pheromone_map[type][idx] > 10.0) pheromone_map[type][idx] = 10.0;
+    Color pixel_color = {0,0,0,0};
+    
+    if(pheromone_map[type][idx] > pheromone_max_strength[type]) {
+        pheromone_max_strength[type] = pheromone_map[type][idx];
+        printf("max strength %d %f\n", type, pheromone_max_strength[type]);
     }
-    ImageDrawPixelV(&pheromone_map_render, position, pixel_color);
+    float factor = pheromone_map[type][idx] / pheromone_max_strength[type];
+    pixel_color = Fade(pheromone_color[type], factor);
+    // ImageDrawPixelV(&pheromone_map_render[type], position, pixel_color);
+
+    // pthread_mutex_unlock(&pheromone_map_lock[type]);
+}
+
+void PheromoneDecay() {
+    for(int type=0; type < PHEROMONE_TYPES; type++) {
+        for(int y=0; y < walls.pixel_height; y++) {
+            for(int x=0; x < walls.pixel_height; x++) {
+                int idx = y * walls.pixel_width + x;
+                pheromone_map[type][idx] -= 1.0;
+                if(pheromone_map[type][idx] < 0) pheromone_map[type][idx] = 0;
+                ImageDrawPixelV(&pheromone_map_render[type], position, pixel_color);
+            }
+        }
+        // for(int idx=0; idx < walls.pixel_width* walls.pixel_height; idx++) {
+        //     pheromone_map[type][idx] -= 1.0;
+        //     if(pheromone_map[type][idx] < 0) pheromone_map[type][idx] = 0;
+        // }
+    }
 }
 
 Image GetWallImage() {
@@ -133,8 +173,8 @@ Image GetFoodImage() {
     return food_render;
 }
 
-Image GetPheromoneImage() {
-    return pheromone_map_render;
+Image GetPheromoneImage(int idx) {
+    return pheromone_map_render[idx];
 }
 
 void UnloadWallBitMap() {
@@ -145,7 +185,8 @@ void UnloadWallBitMap() {
 }
 
 void UnloadPheromoneMaps() {
-    for(int i=0; i<PHEROMONE_TYPES; i++) {
-        MemFree(pheromone_map[i]);
+    for(int type=0; type<PHEROMONE_TYPES; type++) {
+        MemFree(pheromone_map[type]);
+        // pthread_mutex_destroy(&pheromone_map_lock[type]);
     }
 }
