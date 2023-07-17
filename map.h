@@ -20,5 +20,5 @@ bool FoodAt(int x, int y);
 void RemoveFood(int x, int y);
 void GeneratePheromoneMaps();
 void UnloadPheromoneMaps();
-void DropPheromone(Vector2 position, int type, float strength);
-void PheromoneDecay();
+void DropPheromone(Vector2 position, int type, int strength);
+void PheromoneDecay(int strength);

@@ -38,5 +38,5 @@ World* WorldRef() {
 
 void NestAddFood(int amount) {
     world.nest_food += amount;
-    printf("Nest Food: %d\n", world.nest_food);
+    // printf("Nest Food: %d\n", world.nest_food);
 }

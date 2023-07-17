@@ -45,7 +45,7 @@ float simulation_speed = 1.0;
 
 static void print_stats() {
     char buffer[50];
-    snprintf(buffer, 30, "FPS: %d, Speed: %.1f", GetFPS(), simulation_speed);
+    snprintf(buffer, 50, "FPS: %d, Speed: %.1f, Food: %d", GetFPS(), simulation_speed, WorldRef()->nest_food);
     DrawText(buffer, 10, 10, 30, BLACK);
 }
 

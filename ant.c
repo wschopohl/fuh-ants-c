@@ -106,10 +106,10 @@ void AntUpdate(Ant *ant) {
     move(ant);
     if(ant->food == 0) { 
         check_for_food(ant);
-        DropPheromone(ant->position, P_NEST, 1.0);
+        DropPheromone(ant->position, P_NEST, Config.pheromone_drop_strength);
     } else {
         check_for_nest(ant);
-        DropPheromone(ant->position, P_FOOD, 1.0);
+        DropPheromone(ant->position, P_FOOD, Config.pheromone_drop_strength);
     }
 }
 

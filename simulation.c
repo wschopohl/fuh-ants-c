@@ -25,13 +25,17 @@ static void inline sleep_or_pause() {
 
 static void* simulation_loop(void* args) {
     Timer spawn_timer = get_timer();
+    Timer decay_timer = get_timer();
 
     while(simulation_running) {
-        if(get_lap_time_us(&spawn_timer) > 1000000 / Config.spawn_rate) {
+        if(get_lap_time_us(&spawn_timer) > 1000000 / (Config.spawn_rate * speed)) {
             WorldAddAnt(GetNewAnt(WorldRef()->nest_position));
             reset_timer(&spawn_timer);
         }
-        PheromoneDecay();
+        if(get_lap_time_us(&decay_timer) > 1000000 / (Config.pheromone_decay_rate * speed)) {
+            PheromoneDecay(1);
+            reset_timer(&decay_timer);
+        }
         sleep_or_pause();
     }
     stop_timer(&spawn_timer);
