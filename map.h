@@ -22,3 +22,5 @@ void GeneratePheromoneMaps();
 void UnloadPheromoneMaps();
 void DropPheromone(Vector2 position, int type, int strength);
 void PheromoneDecay(int strength);
+void GeneratePheromoneSenseMatrices();
+void UnloadPheromoneSenseMatrices();

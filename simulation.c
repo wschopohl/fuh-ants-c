@@ -11,15 +11,20 @@ static pthread_t simulation_thread;
 static bool simulation_running = true;
 static SimulationPool simulation_pools[THREADS];
 
-static float speed = 1.0;
+static float speed = 1.0, next_speed = 1.0;
+static Timer simulation_loop_timer, ant_loop_timer;
 
-static void inline sleep_or_pause() {
+static void inline sleep_or_pause(Timer *timer) {
+    speed = next_speed;
     if(speed > 0.0) {
-        usleep(1000000 / (FPS * speed));
-        return;
+        int sleeptime = (1000000 / (FPS * speed)) - get_lap_time_us(timer);
+        if(sleeptime < 0) sleeptime = 0;
+        usleep(sleeptime);
+        reset_timer(timer);
     }
-    while(speed <= 0.0) {
+    else while(speed <= 0.0 && simulation_running) {
         usleep(50000);
+        speed = next_speed;
     }
 }
 
@@ -36,19 +41,19 @@ static void* simulation_loop(void* args) {
             PheromoneDecay(1);
             reset_timer(&decay_timer);
         }
-        sleep_or_pause();
+        sleep_or_pause(&simulation_loop_timer);
     }
-    stop_timer(&spawn_timer);
+    stop_timer(&simulation_loop_timer); // just here to ignore compiler warning, unused function
     return NULL;
 }
 
 static void* ant_pool_loop(void* pool_args) {
     SimulationPool *pool = (SimulationPool*)pool_args;
-    while(pool->running) {
+    while(simulation_running) {
         for(int i=0;i<pool->count;i++) {
             AntUpdate(&pool->ants[i]);
         }
-        sleep_or_pause();
+        sleep_or_pause(&ant_loop_timer);
     }
     return NULL;
 }
@@ -57,10 +62,10 @@ void SimulationStart() {
     LoadWallBitMap(WorldRef()->map_filename);
     LoadFoodBitMap(WorldRef()->food_filename);
     GeneratePheromoneMaps();
+    GeneratePheromoneSenseMatrices();
 
     pthread_create(&simulation_thread, NULL, simulation_loop, NULL);
     for(int i=0;i<THREADS;i++) {
-        simulation_pools[i].running = true;
         simulation_pools[i].ants = &WorldRef()->ants[i*ANTS_PER_POOL];
         if(i != THREADS-1) { 
             simulation_pools[i].count = ANTS_PER_POOL;
@@ -72,14 +77,14 @@ void SimulationStart() {
 }
 
 void SimulationStop() {
+    simulation_running = false;
     for(int i=0;i<THREADS;i++) {
-        simulation_pools[i].running = false;
         pthread_join(simulation_pools[i].thread, NULL); 
     }
-    simulation_running = false;
     pthread_join(simulation_thread, NULL);
     UnloadWallBitMap();
     UnloadPheromoneMaps();
+    UnloadPheromoneSenseMatrices();
 }
 
 float GetSimulationSpeed() {
@@ -87,5 +92,6 @@ float GetSimulationSpeed() {
 }
 
 void SetSimulationSpeed(float s) {
-    speed = s;
+    next_speed = s;
+    if(next_speed < 0.0) next_speed = 0.0;
 }

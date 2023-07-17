@@ -14,6 +14,7 @@ static Bitmap food;
 static Image food_render;
 static Image pheromone_map_render[PHEROMONE_TYPES];
 static const Color pheromone_color[PHEROMONE_TYPES] = {P_FOOD_COLOR, P_NEST_COLOR};
+static float* sense_matrix[SENSE_MATRIX_ANGLES];
 
 // pthread_mutex_t pheromone_map_lock[PHEROMONE_TYPES];
 
@@ -105,6 +106,63 @@ void GeneratePheromoneMaps() {
     }
 }
 
+static inline int matrix_position_to_index(int x, int y) {
+    return ((y + Config.ant_sense_distance) * (Config.ant_sense_distance * 2 + 1) + (x + + Config.ant_sense_distance));
+}
+
+void GeneratePheromoneSenseMatrices() {
+    for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
+        sense_matrix[angle_idx] = MemAlloc(sizeof(float) * (Config.ant_sense_distance*2+1) * (Config.ant_sense_distance*2+1));
+    }
+
+    float epsilon = 0.001;
+    float distance, angle, factor;
+    float angle_delta = DEG2RAD * (360.0 / SENSE_MATRIX_ANGLES);
+    for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
+        for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
+            distance = sqrtf(powf(x,2.0)+powf(y,2.0));
+            angle = (atan2f(y,x));
+    
+            for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
+                float matrix_angle = angle; // fabsf(angle);
+                matrix_angle = fabsf(matrix_angle - angle_idx * angle_delta);
+                if(matrix_angle > PI) matrix_angle = fabs(2.0 * PI - matrix_angle);
+                if(distance > Config.ant_sense_distance + epsilon) {
+                    sense_matrix[angle_idx][matrix_position_to_index(x,y)] = 0.0;
+                    continue;
+                }
+                if(matrix_angle > DEG2RAD * Config.ant_field_of_view + epsilon) {
+                    sense_matrix[angle_idx][matrix_position_to_index(x,y)] = 0.0;
+                    continue;
+                }
+                factor = 1.0 - (matrix_angle / (DEG2RAD * Config.ant_field_of_view));
+                // factor = distance;
+                sense_matrix[angle_idx][matrix_position_to_index(x,y)] = factor;
+            }
+        }
+    }
+
+    for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
+        printf("Degree: %d\n", angle_idx);
+        for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
+            for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
+                if(x == 0 && y == 0) {
+                    printf("+++ ");
+                    continue;
+                }
+                if(sense_matrix[angle_idx][matrix_position_to_index(x,y)] == 0.0) {
+                    printf("    ");
+                    continue;
+                }
+                
+                // printf("%03d ", (int)roundf(RAD2DEG * sense_matrix[angle_idx][matrix_position_to_index(x,y)]));
+                printf("%.1f ", sense_matrix[angle_idx][matrix_position_to_index(x,y)]);
+            }
+            printf("\n");
+        }
+    }
+}
+
 void DropPheromone(Vector2 position, int type, int strength) {
     // pthread_mutex_lock(&pheromone_map_lock[type]);
     int idx = position_to_index(position);
@@ -153,4 +211,14 @@ void UnloadPheromoneMaps() {
         UnloadImage(pheromone_map_render[type]);
         // pthread_mutex_destroy(&pheromone_map_lock[type]);
     }
+}
+
+void UnloadPheromoneSenseMatrices() {
+    for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
+        MemFree(sense_matrix[angle_idx]);
+    }
+}
+
+float SensePheromones(Vector2 position, float direction, int type) {
+    return 0.0;
 }

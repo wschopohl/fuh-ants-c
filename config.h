@@ -4,6 +4,7 @@
 #define MAX_ANTS 500
 #define FPS 60
 #define THREADS 4
+#define SENSE_MATRIX_ANGLES 36
 
 typedef struct Configuration {
     int threads;
@@ -17,6 +18,8 @@ typedef struct Configuration {
     int pheromone_drop_strength; // strength that ants drop pheromones at
     int pheromone_decay_strength; // strength that pheromones decay with
     float pheromone_decay_rate; // pheromone decay calls per simulation second
+    float ant_field_of_view; // angle in which pheromones are detected
+    int ant_sense_distance; // distance up to which pheromones are detected
 } Configuration;
 
 #define PHEROMONE_TYPES 2

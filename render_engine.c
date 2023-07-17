@@ -7,6 +7,8 @@
 #include "map.h"
 #include "world.h"
 
+
+
 static Texture2D map_texture;
 static Texture2D walls_texture;
 static Texture2D nest_texture;
@@ -15,7 +17,7 @@ static Texture2D food_texture;
 static Texture2D pheromone_texture[PHEROMONE_TYPES];
 Vector2 ant_center;
 
-static void init() {
+static void init() { 
     InitWindow(WorldRef()->width, WorldRef()->height, "MAS Ant Simulation");
     SetTargetFPS(FPS);
     map_texture = LoadTexture(WorldRef()->map_filename);
@@ -45,8 +47,9 @@ float simulation_speed = 1.0;
 
 static void print_stats() {
     char buffer[50];
-    snprintf(buffer, 50, "FPS: %d, Speed: %.1f, Food: %d", GetFPS(), simulation_speed, WorldRef()->nest_food);
-    DrawText(buffer, 10, 10, 30, BLACK);
+    snprintf(buffer, 50, "FPS: %d\nSpeed: %.1f\nFood: %d", GetFPS(), simulation_speed, WorldRef()->nest_food);
+    DrawRectangle(0,0,140,120,(Color){0,0,0,100});
+    DrawText(buffer, 20, 20, 20, WHITE);
 }
 
 static void render_loop() {
@@ -63,7 +66,7 @@ static void render_loop() {
         // if (IsKeyDown(KEY_LEFT)) ref.x -= 1;
         if (IsKeyDown(KEY_UP)) simulation_speed += 0.1;
         if (IsKeyDown(KEY_DOWN)) simulation_speed -= 0.1;
-        if(simulation_speed < 0.1) simulation_speed = 0.1; // some division by zero bug somewhere
+        if(simulation_speed < 0.1) simulation_speed = 0.1; // some division by zero bug or something
         SetSimulationSpeed(simulation_speed);
 
         
