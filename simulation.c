@@ -51,7 +51,7 @@ static void* ant_pool_loop(void* pool_args) {
     SimulationPool *pool = (SimulationPool*)pool_args;
     while(simulation_running) {
         for(int i=0;i<pool->count;i++) {
-            AntUpdate(&pool->ants[i]);
+            AntUpdate(&pool->ants[i], pool->idx);
         }
         sleep_or_pause(&ant_loop_timer);
     }
@@ -67,6 +67,7 @@ void SimulationStart() {
     pthread_create(&simulation_thread, NULL, simulation_loop, NULL);
     for(int i=0;i<THREADS;i++) {
         simulation_pools[i].ants = &WorldRef()->ants[i*ANTS_PER_POOL];
+        simulation_pools[i].idx = i;
         if(i != THREADS-1) { 
             simulation_pools[i].count = ANTS_PER_POOL;
         } else { // last loop

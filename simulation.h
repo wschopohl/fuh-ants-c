@@ -10,6 +10,7 @@ typedef struct SimulationPool {
     bool running;
     Ant *ants;
     int count;
+    int idx;
 } SimulationPool;
 
 void SimulationSetWorld(World *w);

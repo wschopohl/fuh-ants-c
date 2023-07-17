@@ -14,12 +14,18 @@ static inline bool will_collide_with_wall(Ant *ant) {
     return WallAt(ant->position.x + ant->move.x, ant->position.y + ant->move.y);
 }
 
+static inline void set_direction(Ant *ant, float direction) {
+    ant->direction = direction;
+    if(ant->direction < 0) ant->direction += 360.0;
+    else if(ant->direction >= 360.0) ant->direction -= 360.0;
+}
+
 static void handle_wall_collision(Ant *ant) {
     float old_direction = ant->direction;
     // float search_direction;
     int search_step = 1;
     while(true) {
-        ant->direction = old_direction + search_step * Config.ant_wall_seach_angle * ant->wall_search_start;
+        set_direction(ant, old_direction + search_step * Config.ant_wall_seach_angle * ant->wall_search_start);
         calculate_move_vector(ant);
         if(! will_collide_with_wall(ant)) break;
         if(search_step > 0) search_step *= -1;
@@ -27,45 +33,24 @@ static void handle_wall_collision(Ant *ant) {
     }
 }
 
-static void change_direction(Ant *ant) {
-    ant->direction += GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 10.0;
+static void change_direction(Ant *ant, int pool_idx) {
+    int type = P_NEST;
+    if(ant->food == 0) type = P_FOOD;
+    float pheromone_direction = SensePheromones(ant->position, ant->direction, type, pool_idx) * RAD2DEG;
+    if(pheromone_direction >= 0.0) set_direction(ant, pheromone_direction + GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 100.0);
+    else set_direction(ant, ant->direction + GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 10.0);
     calculate_move_vector(ant);
 }
 
-// def calculateMoveVectors(self):
-//         olddirection = self.direction
-//         search_angle = 0
-//         search_invert = (1 if self.wallSearchStart == 0 else -1)
-//         iteration = 0
-//         while True:
-//             if self.sprite == None: break
-//             if self.nest.world.map == None: break
-//             future_x = self.position[0] + Config.AntMoveDistance * Config.AntAngleStep * math.cos(math.radians(self.direction))
-//             future_y = self.position[1] -Config.AntMoveDistance * Config.AntAngleStep * math.sin(math.radians(self.direction))
-//             if self.nest.world.collision.checkPointMask((future_x, future_y), self.nest.world.map.sprite) == False: break
-//             # search_angle = randint(1,24) * 15
-//             # self.direction = (olddirection + (search_angle)) % 360
-//             if iteration % 2 == 0: 
-//                 search_angle += Config.AntWallSearchAngle
-//                 self.direction = (olddirection + (search_angle * search_invert)) % 360
-//             else:
-//                 self.direction = (olddirection + (search_angle * search_invert * -1)) % 360
-//             iteration += 1
-//             if iteration > 24: 
-//                 self.suicide()
-//                 return
-//         self.dx = Config.AntMoveDistance * math.cos(math.radians(self.direction))
-//         self.dy = -Config.AntMoveDistance * math.sin(math.radians(self.direction))
-
-static inline void move(Ant *ant) {
+static inline void move(Ant *ant, int pool_idx) {
     ant->step++;
-    if(ant->step % ant->angle_step == 0) change_direction(ant);
+    if(ant->step % ant->angle_step == 0) change_direction(ant, pool_idx);
     if(will_collide_with_wall(ant)) handle_wall_collision(ant);
     ant->position = Vector2Add(ant->position, ant->move);
 }
 
 static inline void turnaround(Ant *ant) {
-    ant->direction += 180.0;
+    set_direction(ant, ant->direction + 180.0);
     calculate_move_vector(ant);
 }
 
@@ -90,7 +75,7 @@ Ant GetNewAnt(Vector2 nest_position) {
     Ant ant = (Ant){
         .position = nest_position,
         .nest_position = nest_position,
-        .direction = (float)GetRandomValue(0,360),
+        .direction = (float)GetRandomValue(0,359),
         .speed = Config.ant_max_speed,
         .angle_step = Config.ant_angle_step,
         .food = 0,
@@ -101,9 +86,9 @@ Ant GetNewAnt(Vector2 nest_position) {
     return ant;
 }
 
-void AntUpdate(Ant *ant) {
+void AntUpdate(Ant *ant, int pool_idx) {
     if(!ant->spawned) return;
-    move(ant);
+    move(ant, pool_idx);
     if(ant->food == 0) { 
         check_for_food(ant);
         DropPheromone(ant->position, P_NEST, Config.pheromone_drop_strength);

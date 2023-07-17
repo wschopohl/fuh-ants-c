@@ -15,6 +15,7 @@ static Image food_render;
 static Image pheromone_map_render[PHEROMONE_TYPES];
 static const Color pheromone_color[PHEROMONE_TYPES] = {P_FOOD_COLOR, P_NEST_COLOR};
 static float* sense_matrix[SENSE_MATRIX_ANGLES];
+static float* calc_matrix[THREADS];
 
 // pthread_mutex_t pheromone_map_lock[PHEROMONE_TYPES];
 
@@ -110,6 +111,31 @@ static inline int matrix_position_to_index(int x, int y) {
     return ((y + Config.ant_sense_distance) * (Config.ant_sense_distance * 2 + 1) + (x + + Config.ant_sense_distance));
 }
 
+static void print_matrix(float* matrix) {
+    for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
+        for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
+            if(x == 0 && y == 0) {
+                printf("+++ ");
+                continue;
+            }
+            if(matrix[matrix_position_to_index(x,y)] == 0.0) {
+                printf("    ");
+                continue;
+            }
+            
+            // printf("%03d ", (int)roundf(RAD2DEG * sense_matrix[angle_idx][matrix_position_to_index(x,y)]));
+            printf("%.1f ", matrix[matrix_position_to_index(x,y)]);
+        }
+        printf("\n");
+    }
+}
+
+static void generate_calculation_matrices() {
+    for(int i=0; i < THREADS; i++) {
+        calc_matrix[i] = MemAlloc(sizeof(float) * (Config.ant_sense_distance*2+1) * (Config.ant_sense_distance*2+1));
+    }
+}
+
 void GeneratePheromoneSenseMatrices() {
     for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
         sense_matrix[angle_idx] = MemAlloc(sizeof(float) * (Config.ant_sense_distance*2+1) * (Config.ant_sense_distance*2+1));
@@ -142,25 +168,12 @@ void GeneratePheromoneSenseMatrices() {
         }
     }
 
-    for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
-        printf("Degree: %d\n", angle_idx);
-        for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
-            for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
-                if(x == 0 && y == 0) {
-                    printf("+++ ");
-                    continue;
-                }
-                if(sense_matrix[angle_idx][matrix_position_to_index(x,y)] == 0.0) {
-                    printf("    ");
-                    continue;
-                }
-                
-                // printf("%03d ", (int)roundf(RAD2DEG * sense_matrix[angle_idx][matrix_position_to_index(x,y)]));
-                printf("%.1f ", sense_matrix[angle_idx][matrix_position_to_index(x,y)]);
-            }
-            printf("\n");
-        }
-    }
+    // debug print matrices
+    // for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
+    //     printf("Degree: %d\n", angle_idx);
+    //     print_matrix(sense_matrix[angle_idx]);
+    // }
+    generate_calculation_matrices();
 }
 
 void DropPheromone(Vector2 position, int type, int strength) {
@@ -213,12 +226,58 @@ void UnloadPheromoneMaps() {
     }
 }
 
+static void unload_calculation_matrices() {
+    for(int i=0; i < THREADS; i++) {
+        MemFree(calc_matrix[i]);
+    }
+}
+
 void UnloadPheromoneSenseMatrices() {
     for(int angle_idx=0; angle_idx < SENSE_MATRIX_ANGLES; angle_idx++) {
         MemFree(sense_matrix[angle_idx]);
     }
+    unload_calculation_matrices();
 }
 
-float SensePheromones(Vector2 position, float direction, int type) {
-    return 0.0;
+float SensePheromones(Vector2 position, float direction, int type, int pool_idx) {
+    int direction_idx = (int)roundf(direction / (360 / SENSE_MATRIX_ANGLES)) % SENSE_MATRIX_ANGLES;
+    int ant_x = (int)position.x;
+    int ant_y = (int)position.y;
+    float total_weight = 0.0;
+    float* matrix = calc_matrix[pool_idx];
+    for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
+        int map_row_idx = ((ant_y + y) * walls.pixel_width + ant_x -Config.ant_sense_distance) * 4;
+        for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
+            int idx = matrix_position_to_index(x,y);
+            if(ant_x + x < 0 || ant_y + y < 0 || ant_x + x >= walls.pixel_width || ant_y + y >= walls.pixel_height) {
+                matrix[idx] = 0.0;
+            } else {
+                uint8_t *map_intensity = (uint8_t*)pheromone_map_render[type].data + (map_row_idx + 3);
+                matrix[idx] = sense_matrix[direction_idx][idx] * *map_intensity;
+                total_weight += matrix[idx];
+            }
+            map_row_idx+=4;
+        }
+    }
+
+    if(total_weight == 0.0) return -1.0;
+
+    float center_of_mass_x = 0.0, center_of_mass_y = 0.0;
+    for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
+        for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
+            int idx = matrix_position_to_index(x,y);
+            if(matrix[idx] == 0.0) continue;
+            float factor = matrix[idx] / total_weight;
+            center_of_mass_x += factor * x;
+            center_of_mass_y += factor * y;
+        }
+    }
+
+    float center_of_mass_angle = atan2f(center_of_mass_y, center_of_mass_x);
+    if(center_of_mass_angle < 0) center_of_mass_angle += 2 * PI;
+
+    // print_matrix(matrix);
+    // printf("total weight %f, com_x: %.1f, com_y: %.1f, view dir: %.1f, sense_dir: %.1f\n", total_weight, center_of_mass_x, center_of_mass_y, direction, RAD2DEG * center_of_mass_angle);
+
+    return center_of_mass_angle;
 }

@@ -18,6 +18,6 @@ typedef struct Ant {
 } Ant;
 
 Ant GetNewAnt(Vector2 position);
-void AntUpdate(Ant *ant);
+void AntUpdate(Ant *ant, int pool_idx);
 
 #endif

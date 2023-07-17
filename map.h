@@ -21,6 +21,7 @@ void RemoveFood(int x, int y);
 void GeneratePheromoneMaps();
 void UnloadPheromoneMaps();
 void DropPheromone(Vector2 position, int type, int strength);
+float SensePheromones(Vector2 position, float direction, int type, int pool_idx);
 void PheromoneDecay(int strength);
 void GeneratePheromoneSenseMatrices();
 void UnloadPheromoneSenseMatrices();
