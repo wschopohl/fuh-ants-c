@@ -1,7 +1,7 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
-#define MAX_ANTS 500
+#define MAX_ANTS 1
 #define FPS 60
 #define THREADS 4
 #define SENSE_MATRIX_ANGLES 36

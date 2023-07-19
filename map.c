@@ -245,6 +245,8 @@ float SensePheromones(Vector2 position, float direction, int type, int pool_idx)
     int ant_y = (int)position.y;
     float total_weight = 0.0;
     float* matrix = calc_matrix[pool_idx];
+    float center_of_mass_x = 0.0, center_of_mass_y = 0.0;
+    
     for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
         int map_row_idx = ((ant_y + y) * walls.pixel_width + ant_x -Config.ant_sense_distance) * 4;
         for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
@@ -255,6 +257,8 @@ float SensePheromones(Vector2 position, float direction, int type, int pool_idx)
                 uint8_t *map_intensity = (uint8_t*)pheromone_map_render[type].data + (map_row_idx + 3);
                 matrix[idx] = sense_matrix[direction_idx][idx] * *map_intensity;
                 total_weight += matrix[idx];
+                center_of_mass_x += matrix[idx] * x;
+                center_of_mass_y += matrix[idx] * y;
             }
             map_row_idx+=4;
         }
@@ -262,16 +266,8 @@ float SensePheromones(Vector2 position, float direction, int type, int pool_idx)
 
     if(total_weight == 0.0) return -1.0;
 
-    float center_of_mass_x = 0.0, center_of_mass_y = 0.0;
-    for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
-        for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
-            int idx = matrix_position_to_index(x,y);
-            if(matrix[idx] == 0.0) continue;
-            float factor = matrix[idx] / total_weight;
-            center_of_mass_x += factor * x;
-            center_of_mass_y += factor * y;
-        }
-    }
+    center_of_mass_x /= total_weight;
+    center_of_mass_y /= total_weight;
 
     float center_of_mass_angle = atan2f(center_of_mass_y, center_of_mass_x);
     if(center_of_mass_angle < 0) center_of_mass_angle += 2 * PI;
