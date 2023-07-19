@@ -3,6 +3,7 @@
         "render_engine.h": "c",
         "stdlib.h": "c",
         "config.h": "c",
-        "*.m": "c"
+        "*.m": "c",
+        "ios": "c"
     }
 }

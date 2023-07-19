@@ -17,6 +17,7 @@ static Image pheromone_map_render[PHEROMONE_TYPES];
 static const Color pheromone_color[PHEROMONE_TYPES] = {P_FOOD_COLOR, P_NEST_COLOR};
 static float* sense_matrix[SENSE_MATRIX_ANGLES];
 static float* calc_matrix[THREADS];
+static int pheromone_map_width, pheromone_map_height;
 
 static Vector2 nest_position;
 
@@ -101,14 +102,14 @@ void LoadFoodBitMap(const char* filename) {
 }
 
 static inline int position_to_index(Vector2 position) {
-    return (int)((int)position.y * walls.pixel_width + (int)position.x);
+    return (int)((int)(position.y * Config.pheromone_map_scale) * pheromone_map_width + (int)(position.x * Config.pheromone_map_scale));
 }
 
 void GeneratePheromoneMaps() {
-    int width = ceilf(walls.pixel_width * Config.pheromone_map_scale);
-    int height = ceilf(walls.pixel_height * Config.pheromone_map_scale);
+    pheromone_map_width  = ceilf(walls.pixel_width  * Config.pheromone_map_scale);
+    pheromone_map_height = ceilf(walls.pixel_height * Config.pheromone_map_scale);
     for(int type=0; type<PHEROMONE_TYPES; type++) {
-        pheromone_map_render[type] = GenImageColor(walls.pixel_width, walls.pixel_height, pheromone_color[type]);
+        pheromone_map_render[type] = GenImageColor(pheromone_map_width, pheromone_map_height, pheromone_color[type]);
     }
 }
 
@@ -191,7 +192,7 @@ void DropPheromone(Vector2 position, int type, int strength) {
 
 void PheromoneDecay(int strength) {
     for(int type=0; type < PHEROMONE_TYPES; type++) {
-        for(int idx = 0; idx < walls.pixel_width * walls.pixel_height; idx++) {
+        for(int idx = 0; idx < pheromone_map_width * pheromone_map_height; idx++) {
             uint8_t *alpha = (uint8_t*)pheromone_map_render[type].data + (idx*4+3);
             if(*alpha - strength < 0) *alpha = 0;
             else *alpha -= strength;
@@ -260,17 +261,17 @@ float SenseFood(Vector2 position, int pool_idx) {
 
 float SensePheromones(Vector2 position, float direction, int type, int pool_idx) {
     int direction_idx = (int)roundf(direction / (360 / SENSE_MATRIX_ANGLES)) % SENSE_MATRIX_ANGLES;
-    int ant_x = (int)position.x;
-    int ant_y = (int)position.y;
+    int ant_x = (int)(position.x * Config.pheromone_map_scale);
+    int ant_y = (int)(position.y * Config.pheromone_map_scale);
     float total_weight = 0.0;
     float* matrix = calc_matrix[pool_idx];
     float center_of_mass_x = 0.0, center_of_mass_y = 0.0;
     
     for(int y = -Config.ant_sense_distance; y <= Config.ant_sense_distance; y++) {
-        int map_row_idx = ((ant_y + y) * walls.pixel_width + ant_x -Config.ant_sense_distance) * 4;
+        int map_row_idx = ((ant_y + y) * pheromone_map_width + ant_x -Config.ant_sense_distance) * 4;
         for(int x = -Config.ant_sense_distance; x <= Config.ant_sense_distance; x++) {
             int idx = matrix_position_to_index(x,y);
-            if(ant_x + x < 0 || ant_y + y < 0 || ant_x + x >= walls.pixel_width || ant_y + y >= walls.pixel_height) {
+            if(ant_x + x < 0 || ant_y + y < 0 || ant_x + x >= pheromone_map_width || ant_y + y >= pheromone_map_height) {
                 matrix[idx] = 0.0;
             } else {
                 uint8_t *map_intensity = (uint8_t*)pheromone_map_render[type].data + (map_row_idx + 3);

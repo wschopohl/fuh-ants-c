@@ -77,8 +77,10 @@ static void render_loop() {
         {
             ClearBackground(LIGHTGRAY);
             // DrawTexture(map_texture, 0, 0, WHITE);
-            DrawTexture(pheromone_texture[P_FOOD], 0, 0, WHITE);
-            DrawTexture(pheromone_texture[P_NEST], 0, 0, WHITE);
+            DrawTextureEx(pheromone_texture[P_NEST], (Vector2){0,0}, 0.0, 1/Config.pheromone_map_scale, WHITE);
+            DrawTextureEx(pheromone_texture[P_FOOD], (Vector2){0,0}, 0.0, 1/Config.pheromone_map_scale, WHITE);
+            // DrawTexture(pheromone_texture[P_FOOD], 0, 0, WHITE);
+            // DrawTexture(pheromone_texture[P_NEST], 0, 0, WHITE);
             DrawTexture(walls_texture, 0, 0, WHITE);
             DrawTexture(food_texture, 0, 0, WHITE);
             DrawTexture(nest_texture, WorldRef()->nest_position.x - nest_texture.width/2, WorldRef()->nest_position.y - nest_texture.height/2, WHITE);
