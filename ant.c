@@ -36,9 +36,10 @@ static void handle_wall_collision(Ant *ant) {
 static void change_direction(Ant *ant, int pool_idx) {
     int type = P_NEST;
     if(ant->food == 0) type = P_FOOD;
+    float random_direction = GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 10.0;
     float pheromone_direction = SensePheromones(ant->position, ant->direction, type, pool_idx) * RAD2DEG;
-    if(pheromone_direction >= 0.0) set_direction(ant, pheromone_direction + GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 100.0);
-    else set_direction(ant, ant->direction + GetRandomValue(-Config.ant_angle_variation*10,Config.ant_angle_variation*10) / 10.0);
+    if(pheromone_direction >= 0.0) set_direction(ant, pheromone_direction + random_direction);
+    else set_direction(ant, ant->direction + random_direction);
     calculate_move_vector(ant);
 }
 

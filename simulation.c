@@ -38,7 +38,7 @@ static void* simulation_loop(void* args) {
             reset_timer(&spawn_timer);
         }
         if(get_lap_time_us(&decay_timer) > 1000000 / (Config.pheromone_decay_rate * speed)) {
-            PheromoneDecay(1);
+            PheromoneDecay(Config.pheromone_decay_strength);
             reset_timer(&decay_timer);
         }
         sleep_or_pause(&simulation_loop_timer);

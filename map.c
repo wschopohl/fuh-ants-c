@@ -276,6 +276,7 @@ float SensePheromones(Vector2 position, float direction, int type, int pool_idx)
     float center_of_mass_angle = atan2f(center_of_mass_y, center_of_mass_x);
     if(center_of_mass_angle < 0) center_of_mass_angle += 2 * PI;
 
+    // debug print
     // print_matrix(matrix);
     // printf("total weight %f, com_x: %.1f, com_y: %.1f, view dir: %.1f, sense_dir: %.1f\n", total_weight, center_of_mass_x, center_of_mass_y, direction, RAD2DEG * center_of_mass_angle);
 
