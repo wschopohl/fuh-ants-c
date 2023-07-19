@@ -1,4 +1,5 @@
 #include <raylib.h>
+#include <raymath.h>
 #include <math.h>
 #include <inttypes.h>
 #include <stdio.h>
@@ -16,6 +17,8 @@ static Image pheromone_map_render[PHEROMONE_TYPES];
 static const Color pheromone_color[PHEROMONE_TYPES] = {P_FOOD_COLOR, P_NEST_COLOR};
 static float* sense_matrix[SENSE_MATRIX_ANGLES];
 static float* calc_matrix[THREADS];
+
+static Vector2 nest_position;
 
 // pthread_mutex_t pheromone_map_lock[PHEROMONE_TYPES];
 
@@ -102,6 +105,8 @@ static inline int position_to_index(Vector2 position) {
 }
 
 void GeneratePheromoneMaps() {
+    int width = ceilf(walls.pixel_width * Config.pheromone_map_scale);
+    int height = ceilf(walls.pixel_height * Config.pheromone_map_scale);
     for(int type=0; type<PHEROMONE_TYPES; type++) {
         pheromone_map_render[type] = GenImageColor(walls.pixel_width, walls.pixel_height, pheromone_color[type]);
     }
@@ -239,6 +244,20 @@ void UnloadPheromoneSenseMatrices() {
     unload_calculation_matrices();
 }
 
+float SenseFood(Vector2 position, int pool_idx) {
+    for(int y = position.y - Config.ant_sense_distance; y <= position.y + Config.ant_sense_distance; y++) {
+        for(int x = position.x - Config.ant_sense_distance; x <= position.x + Config.ant_sense_distance; x++) {
+            if(x < 0 || y < 0 || x >= walls.pixel_width || y >= walls.pixel_height) continue;
+            if(bit_at(food, x, y)) {
+                float angle = atan2f(y - (int)position.y, x - (int)position.x);
+                if(angle < 0) angle += 2 * PI;
+                return angle;
+            }
+        }
+    }
+    return -1.0;
+}
+
 float SensePheromones(Vector2 position, float direction, int type, int pool_idx) {
     int direction_idx = (int)roundf(direction / (360 / SENSE_MATRIX_ANGLES)) % SENSE_MATRIX_ANGLES;
     int ant_x = (int)position.x;
@@ -277,4 +296,8 @@ float SensePheromones(Vector2 position, float direction, int type, int pool_idx)
     // printf("total weight %f, com_x: %.1f, com_y: %.1f, view dir: %.1f, sense_dir: %.1f\n", total_weight, center_of_mass_x, center_of_mass_y, direction, RAD2DEG * center_of_mass_angle);
 
     return center_of_mass_angle;
+}
+
+void SetNest(Vector2 position) {
+    nest_position = position;
 }

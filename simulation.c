@@ -59,6 +59,7 @@ static void* ant_pool_loop(void* pool_args) {
 }
 
 void SimulationStart() {
+    SetNest(WorldRef()->nest_position);
     LoadWallBitMap(WorldRef()->map_filename);
     LoadFoodBitMap(WorldRef()->food_filename);
     GeneratePheromoneMaps();

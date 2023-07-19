@@ -13,6 +13,7 @@ typedef struct Ant {
     int food;
     int step;
     int angle_step;
+    int pheromone_strength;
     int wall_search_start;
     Vector2 nest_position;
 } Ant;

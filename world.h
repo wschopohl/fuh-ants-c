@@ -23,5 +23,6 @@ int WorldWidth();
 int WorldHeight();
 void NestAddFood(int amount);
 World* WorldRef();
+void KillAnt(Ant *ant);
 
 #endif

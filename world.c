@@ -27,7 +27,7 @@ void WorldAddAnt(Ant ant) {
     }
 }
 
-void WorldKillAnt(Ant *ant) {
+void KillAnt(Ant *ant) {
     ant->spawned = false;
     world.ant_count--;
 }

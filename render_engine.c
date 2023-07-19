@@ -39,6 +39,9 @@ static void draw_ants() {
             DrawTexturePro(ant_texture, (Rectangle){0, 0, ant_texture.width, ant_texture.height}, 
                 (Rectangle){a->position.x, a->position.y, ant_texture.width, ant_texture.height},
                 (Vector2){6,5}, a->direction, WHITE);
+            if(a->food > 0) {
+                DrawCircleV(a->position, 1.5, GREEN);
+            }
         }
     }
 }
